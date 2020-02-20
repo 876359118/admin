@@ -1,0 +1,98 @@
+建立连接
+	${YourProductKey}.iot-as-mqtt.${YourRegionId}.aliyuncs.com:1883
+
+	a1sGmrJWtfl.iot-as-mqtt.cn-shanghai.aliyuncs.com:1883
+
+
+报头
+	10 ?? 
+
+可变报头
+
+	协议
+	00 04 4D 51 54 54 
+	协议级别
+	04 
+	连接标志
+	C2 
+	保持连接
+	00 64
+
+	共10字节
+
+完整报头 10 ?? 00 04 4D 51 54 54 04 C2 00 64 
+有效载荷
+	mqttClientId: clientId+"|securemode=3,signmethod=hmacsha1,timestamp=132323232|"
+	mqttUsername: deviceName+"&"+productKey
+	mqttPassword: sign_hmac(deviceSecret,content)
+	例子:
+	*=clientId	表示客户端ID，建议使用设备的MAC地址或SN码，64字符内
+	#=deviceName
+	%=productKey
+	
+	客户端
+	mqttClientId: *|securemode=3,signmethod=hmacsha1|
+	mqttClientId: lock|securemode=3,signmethod=hmacsha1|
+	
+	用户名
+	mqttUsername: #&%
+	mqttUsername: lock&a1sGmrJWtfl
+	
+	密码
+		mqttPassword: clientId*deviceName#productKey%
+		mqttPassword: clientIdlockdeviceNamelockproductKeya1sGmrJWtfl
+
+		mqttPassword: sign_hmac(deviceSecret,content)
+		mqttPassword: 哈希加密(密码在设备里面动态分配,clientIdlockdeviceNamelockproductKeya1sGmrJWtfl)
+	最终密码 mqttPassword:cba291998503913f9cc60acc6d726590cf652117
+	
+	
+	假设clientId = 12345，deviceName = device， productKey = pk， timestamp = 789，signmethod=hmacsha1，deviceSecret=secret，那么使用TCP方式提交给
+	mqttclientId=12345|securemode=3,signmethod=hmacsha1,timestamp=789|
+	mqttUsername=device&pk
+	mqttPassword=hmacsha1("secret","clientId  12345  deviceName	device	productKey	pk timestamp789").toHexString(); 
+	
+	
+	
+	
+	
+	
+	
+	完整有效载荷例子
+	客户端ID+用户名+密码
+	
+	16进制
+	客户端ID=00 26 6C 6F 63 6B 7C 73 65 63 75 72 65 6D 6F 64 65 3D 33 2C 73 69 67 6E 6D 65 74 68 6F 64 3D 68 6D 61 63 73 68 61 31 7C 
+	00 ?? = 长度
+	
+	
+	用户名=00 10 6C 6F 63 6B 26 61 31 73 47 6D 72 4A 57 74 66 6C 
+	00 ?? =长度
+	
+	
+	密码=00 28 63 62 61 32 39 31 39 39 38 35 30 33 39 31 33 66 39 63 63 36 30 61 63 63 36 64 37 32 36 35 39 30 63 66 36 35 32 31 31 37 
+	00 ?? = 长度
+	
+	完整16进制有效载荷例子
+	客户端ID长度 + 客户端ID+用户名长度+用户名+密码长度+密码
+	00 3A 6C 6F 63 6B 7C 73 65 63 75 72 65 6D 6F 64 65 3D 33 2C 73 69 67 6E 6D 65 74 68 6F 64 3D 68 6D 61 63 73 68 61 31 2C 74 69 6D 65 73 74 61 6D 70 3D 31 33 32 33 32 33 32 33 32 7C 00 2F 63 6C 69 65 6E 74 49 64 6C 6F 63 6B 64 65 76 69 63 65 4E 61 6D 65 6C 6F 63 6B 70 72 6F 64 75 63 74 4B 65 79 61 31 73 47 6D 72 4A 57 74 66 6C 00 28 63 62 61 32 39 31 39 39 38 35 30 33 39 31 33 66 39 63 63 36 30 61 63 63 36 64 37 32 36 35 39 30 63 66 36 35 32 31 31 37 
+
+	全部完整例子 报头+可变报头+有效载荷
+	
+	
+	例子	??=长度 =130 = (	(长度/128)	+	(长度-(长度/128)=余数))
+			余数 = 2 =0000 0010
+			超过128 高位位1
+			最终= 1000 0010 
+			余数在前 倍数在后
+			
+	完整报头 10 ?? 00 04 4D 51 54 54 04 C2 00 64 
+	
+全部完整例子 10 6E 00 04 4D 51 54 54 04 C2 00 64 00 26 6C 6F 63 6B 7C 73 65 63 75 72 65 6D 6F 64 65 3D 33 2C 73 69 67 6E 6D 65 74 68 6F 64 3D 68 6D 61 63 73 68 61 31 7C 00 10 6C 6F 63 6B 26 61 31 73 47 6D 72 4A 57 74 66 6C 00 28 63 62 61 32 39 31 39 39 38 35 30 33 39 31 33 66 39 63 63 36 30 61 63 63 36 64 37 32 36 35 39 30 63 66 36 35 32 31 31 37 
+
+	连接返回值 
+			0x00连接已接受 0x01连接已拒绝，不支持的协议版本 
+			0x02连接已拒绝，不合格的客户端标识符 
+			0x03连接已拒绝，服务端不可用 
+			0x04连接已拒绝，无效的用户名或密码 
+			0x05连接已拒绝，未授权
